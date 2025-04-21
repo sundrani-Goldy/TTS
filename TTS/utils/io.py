@@ -41,6 +41,23 @@ def load_fsspec(
     Returns:
         Object stored in path.
     """
+    #XttsConfig defines all the hyperparameters and settings used by the XTTS model (e.g., model architecture, language support, speaker embedding, audio settings, etc.).
+    from TTS.tts.configs.xtts_config import XttsConfig
+    #XttsAudioConfig defines the audio configuration settings for the XTTS model (e.g., sample rate, number of mel channels, etc.).
+    #XttsArgs defines the arguments used for training and evaluating the XTTS model (e.g., batch size, learning rate, etc.).
+    from TTS.tts.models.xtts import XttsAudioConfig, XttsArgs
+    #BaseDatasetConfig defines the base configuration for datasets used in TTS training and evaluation (e.g., dataset paths, data augmentation settings, etc.).
+    #It is used to create a dataset object that can be used for training and evaluation.
+    from TTS.config.shared_configs import BaseDatasetConfig
+    
+    # Add the classes to the safe globals for torch serialization
+    # This is necessary to avoid issues with loading the model when the classes are not in the global namespace.
+    torch.serialization.add_safe_globals([
+    XttsConfig,
+    XttsAudioConfig,
+    XttsArgs,
+    BaseDatasetConfig
+])
     is_local = os.path.isdir(path) or os.path.isfile(path)
     if cache and not is_local:
         with fsspec.open(
