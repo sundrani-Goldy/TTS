@@ -5,10 +5,22 @@ from TTS.tts.models.xtts import Xtts
 import soundfile as sf
 import time
 import traceback
-# Path to your trained model
 
-MODEL_PATH = "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/run/training/GPT_XTTS-Marathi-Optimized-Continued-April-24-2025_01+21PM-8fbe98ee"
+# Path to your trained model
+MODEL_PATH = "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/run/training/GPT_XTTS-Marathi-Optimized-Continued-April-24-2025_01+21PM-8fbe98ee"
 CONFIG_PATH = f"{MODEL_PATH}/config.json"
+
+# Explicitly set tokenizer path - use one of the found paths
+VOCAB_PATH = "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/run/training/XTTS_v2.0_original_model_files/vocab.json"
+
+# Ensure tokenizer file exists
+if not os.path.exists(VOCAB_PATH):
+    print(f"Tokenizer file not found at {VOCAB_PATH}")
+    # Try alternative path
+    VOCAB_PATH = "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/run/training/XTTS_v2.0_original_model_files/vocab.json"
+    if not os.path.exists(VOCAB_PATH):
+        print(f"Alternative tokenizer file not found at {VOCAB_PATH}")
+        exit(1)
 
 print(f"Loading config from {CONFIG_PATH}")
 # Check if config file exists
@@ -23,60 +35,46 @@ config = XttsConfig()
 config.load_json(CONFIG_PATH)
 print("Config loaded successfully")
 
-# Debug: Print tokenizer path from config
-print(f"Tokenizer path in config: {config.tokenizer_path if hasattr(config, 'tokenizer_path') else 'Not specified'}")
-
-# Find vocab.json in the directory tree
-vocab_files = []
-for root, dirs, files in os.walk("/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2"):
-    if "vocab.json" in files:
-        vocab_files.append(os.path.join(root, "vocab.json"))
-
-print(f"Found vocab.json files: {vocab_files}")
-
-# Specify the parent model directory where the base model's tokenizer might be
-PARENT_MODEL_DIR = "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/XTTS_v2.0_original_model_files"
-TOKENIZER_DIR = "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2"
-
-# Update config with tokenizer path if not already set
-# In your model loading code, ensure proper tokenizer initialization
-if not hasattr(config, 'tokenizer_path'):
-    config.tokenizer_path = "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/run/training/XTTS_v2.0_original_model_files/vocab.json"
+# Set tokenizer path in config
+config.tokenizer_path = VOCAB_PATH
+print(f"Tokenizer path set to: {config.tokenizer_path}")
 
 # Initialize and load the model
 print("Initializing model from config...")
-model = Xtts.init_from_config(config)  # Add this line
+model = Xtts.init_from_config(config)
 print("Model initialized")
 
-# Now load the checkpoint
+# Now load the checkpoint with explicit vocab path
 print(f"Loading model from: {MODEL_PATH}")
 try:
-    # Try with explicit vocab_path
-    if hasattr(config, 'tokenizer_path') and os.path.exists(config.tokenizer_path):
-        print(f"Loading checkpoint with vocab_path: {config.tokenizer_path}")
-        model.load_checkpoint(config, checkpoint_dir=MODEL_PATH, eval=True, vocab_path=config.tokenizer_path)
-        model = torch.compile(model, mode="max-autotune")
-    else:
-        print("Loading checkpoint without specifying vocab_path")
-        model.load_checkpoint(config, checkpoint_dir=MODEL_PATH, eval=True)
+    print(f"Loading checkpoint with vocab_path: {VOCAB_PATH}")
+    model.load_checkpoint(config, checkpoint_dir=MODEL_PATH, eval=True, vocab_path=VOCAB_PATH)
     print("Model loaded successfully")
 except Exception as e:
     print(f"Error loading model: {e}")
     traceback.print_exc()
     exit(1)
 
-# Debug: Check if tokenizer is loaded
-print(f"Tokenizer initialized: {model.tokenizer is not None}")
+# Verify tokenizer is initialized correctly
 if model.tokenizer is None:
-    print("ERROR: Tokenizer is None! Trying to initialize tokenizer manually...")
+    print("ERROR: Tokenizer is None! Initializing tokenizer manually...")
     try:
         from TTS.tts.layers.xtts.tokenizer import XTTSTokenizer
-        model.tokenizer = XTTSTokenizer(config.tokenizer_path)
+        model.tokenizer = XTTSTokenizer(VOCAB_PATH)
         print("Tokenizer manually initialized")
     except Exception as e:
         print(f"Failed to initialize tokenizer: {e}")
         traceback.print_exc()
         exit(1)
+
+# Check tokenizer functionality
+try:
+    test_encoding = model.tokenizer.encode("Test text", "en")
+    print(f"Tokenizer test successful, encoded: {test_encoding[:5]}...")
+except Exception as e:
+    print(f"Tokenizer test failed: {e}")
+    traceback.print_exc()
+    exit(1)
 
 # Move to appropriate device
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -84,7 +82,7 @@ print(f"Moving model to {device}")
 model.to(device)
 
 # Reference audio for voice characteristics
-speaker_reference = "/home/ubuntu/Testing/TTS/hindi3.wav"
+speaker_reference = "/home/ubuntu/TTS/hindi3.wav"
 print(f"Using speaker reference: {speaker_reference}")
 if not os.path.exists(speaker_reference):
     print(f"Speaker reference file not found at {speaker_reference}")
@@ -96,23 +94,25 @@ def synthesize_speech(text, language="hi"):
     start_time = time.time()
     try:
         # Check tokenizer before synthesis
-        if model.tokenizer is None:
-            print("ERROR: Tokenizer is still None before synthesis!")
-            return None
+        if model.tokenizer is None or not hasattr(model.tokenizer, 'encode'):
+            print("ERROR: Invalid tokenizer before synthesis! Reinitializing...")
+            from TTS.tts.layers.xtts.tokenizer import XTTSTokenizer
+            model.tokenizer = XTTSTokenizer(VOCAB_PATH)
+        
         outputs = model.synthesize(
             text=text,
             speaker_wav=speaker_reference,
             language=language,
-            temperature=0.5,        # Match Hindi setting
-            length_penalty=0.95,    # Match Hindi setting
-            repetition_penalty=2.6, # Match Hindi setting
-            top_k=10,               # Match Hindi setting
-            top_p=0.8,              # Same in both
+            temperature=0.5,
+            length_penalty=0.95,
+            repetition_penalty=2.6,
+            top_k=10,
+            top_p=0.8,
             config=config,
-            speed=0.9,              # Add speed parameter
+            speed=0.9,
             enable_text_splitting=True,
-            gpt_cond_len=1,         # Reduce from 3 to 1
-            gpt_cond_chunk_len=1,   # Reduce from 3 to 1
+            gpt_cond_len=1,
+            gpt_cond_chunk_len=1,
         )
         print(f"Synthesis completed in {time.time() - start_time:.2f} seconds")
         if "wav" in outputs:

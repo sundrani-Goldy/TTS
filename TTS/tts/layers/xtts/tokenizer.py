@@ -145,7 +145,7 @@ def normalize_hindi_digits(text):
     return text
 
 def hindi_number_to_words(num):
-    """Convert a number to Marathi words using Indian numbering system"""
+    """Convert a number to Hindi words using Indian numbering system"""
     if num < 0:
         return "ऋण " + hindi_number_to_words(abs(num))
     if num == 0:
@@ -155,7 +155,7 @@ def hindi_number_to_words(num):
     if num <= 100 and num in _hindi_number_words:
         return _hindi_number_words[num]
     
-    # Handle numbers according to Marathi number system
+    # Handle numbers according to Indian number system
     if num < 100:
         # For numbers not in the dictionary (should never happen with our complete dict)
         return str(num)
@@ -163,16 +163,16 @@ def hindi_number_to_words(num):
         hundreds = num // 100
         remainder = num % 100
         if remainder:
-            return _hindi_number_words[hundreds] + "शे " + hindi_number_to_words(remainder)
+            return _hindi_number_words[hundreds] + " सौ " + hindi_number_to_words(remainder)
         else:
-            return _hindi_number_words[hundreds] + "शे"
+            return _hindi_number_words[hundreds] + " सौ"
     elif num < 100000:
         thousands = num // 1000
         remainder = num % 1000
         if thousands == 1:
-            prefix = "एक हजार"
+            prefix = "एक हज़ार"
         else:
-            prefix = hindi_number_to_words(thousands) + " हजार"
+            prefix = hindi_number_to_words(thousands) + " हज़ार"
         if remainder:
             return prefix + " " + hindi_number_to_words(remainder)
         else:
@@ -201,7 +201,7 @@ def hindi_number_to_words(num):
             return prefix
 
 def _expand_decimal_point(m, lang="hi"):
-    """Handle decimal numbers in Marathi"""
+    """Handle decimal numbers in Hindi"""
     text = m.group(1)
     text = normalize_hindi_digits(text)
     
@@ -238,7 +238,7 @@ def _expand_hindi_ordinal(m):
         return number_word + "वें"
 
 def _expand_hindi_currency(m):
-    """Handle currency expressions in Marathi"""
+    """Handle currency expressions in Hindi"""
     amount_text = m.group(0).replace('₹', '').replace(',', '')
     amount_text = normalize_hindi_digits(amount_text)
     
@@ -468,7 +468,6 @@ class VoiceBpeTokenizer:
         lang = lang.split("-")[0]  # remove the region
         self.check_input_length(txt, lang)
         txt = self.preprocess_text(txt, lang)
-        lang = "zh-cn" if lang == "zh" else lang
         txt = f"[{lang}]{txt}"
         txt = txt.replace(" ", "[SPACE]")
         return self.tokenizer.encode(txt).ids
@@ -519,4 +518,3 @@ def test_hindi_processing():
 
 if __name__ == "__main__":
     test_hindi_processing()
-

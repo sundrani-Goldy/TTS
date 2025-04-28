@@ -35,8 +35,8 @@ GRAD_ACUMM_STEPS = 30  # 20 * 40 = 800 effective batch size
 config_dataset = BaseDatasetConfig(
     formatter="ljspeech",
     dataset_name="ljspeech",
-    path="/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/",
-    meta_file_train="audio_text_mapping_with_three_column.csv",
+    path="/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/",
+    meta_file_train="cleaned_updated_updated.csv",
     language="hi",  # Marathi (ISO 639-1 code)
 )
 
@@ -80,17 +80,18 @@ if not os.path.isfile(TOKENIZER_FILE) or not os.path.isfile(XTTS_CHECKPOINT):
 
 # Training sentences generations - using the same reference speakers for better voice cloning
 SPEAKER_REFERENCE = [
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_1.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_2.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_3.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_4.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_5.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_6.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_7.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_8.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_9.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_10.wav",
-    "/home/ubuntu/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_11.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_1.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_2.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_3.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_4.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_5.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_6.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_7.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_8.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_9.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_10.wav",
+    "/home/ubuntu/Testing/TTS/recipes/ljspeech/xtts_v2/wavs/marathi_11.wav",
+    "/home/ubuntu/Testing/TTS/hindi3.wav"
 ]
 LANGUAGE = config_dataset.language
 
@@ -228,7 +229,7 @@ def main():
     # init the trainer and 🚀
     trainer = Trainer(
         TrainerArgs(
-            restore_path=None,  # Use the specified checkpoint path
+            restore_path=CHECKPOINT_PATH,  # Use the specified checkpoint path
             skip_train_epoch=False,
             start_with_eval=START_WITH_EVAL,
             grad_accum_steps=GRAD_ACUMM_STEPS,
